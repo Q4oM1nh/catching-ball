@@ -1,1 +1,2 @@
 cd "C:\Users\PC\Downloads\Catching ball\" ; if ($?) { gcc main.c -o main -I "C:/raylib/include" -L "C:/raylib/lib" -lraylib -lopengl32 -lgdi32 -lwinmm } ; if ($?) { .\main }
+cd "C:\Users\RGB\Desktop\catching-ball-main" ; if ($?) { gcc main.c -o main -I "C:/raylib/include" -L "C:/raylib/lib" -lraylib -lopengl32 -lgdi32 -lwinmm } ; if ($?) { .\main }

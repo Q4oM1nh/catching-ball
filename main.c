@@ -5,10 +5,10 @@
 #include<math.h>
 
 
-#define window_width 1920
-#define window_height 1080
-#define BALL_COUNT 5
-#define HEART_COUNT 2
+#define window_width 1600
+#define window_height 900
+#define BALL_COUNT 15
+#define HEART_COUNT 1
 
 typedef struct {
     int x, y;
@@ -28,18 +28,21 @@ typedef struct{
     int x, y;
     int width;
     int height;
-    int velocity;
+    float velocity;
 } Heart;
 
-void display(Ball balls[], int score, Heart heart[], Texture2D heart_texture) {
+void display(Ball balls[], int score,int attempt, Heart heart[], Texture2D heart_texture) {
     for (int i = 0; i < BALL_COUNT; i++) {
-        DrawCircle(balls[i].x, balls[i].y, balls[i].size, PURPLE); // Hiển thị các bóng
+        DrawCircle(balls[i].x, balls[i].y, balls[i].size, BLUE); 
     }
     for (int i = 0; i < HEART_COUNT; i++) {
+        if( heart[i].y >= 0 ){ // chỉ vẽ trái tim nếu nó có trên màn hinh
         DrawTexture(heart_texture, heart[i].x, heart[i].y, WHITE);
     }
-
-    DrawText(TextFormat("Score: %d", score), 20, 20, 40, BLUE); // Hiển thị điểm số
+    }
+    DrawText(TextFormat("%d Lives", attempt), 1360, 20 , 40, RED); 
+    DrawText(TextFormat("Score: %d", score), 20, 20, 40, BLUE);
+    DrawText(TextFormat("Press Esc to exit"), 20, 800 , 20, RED);
 }
 
 
@@ -52,17 +55,21 @@ int rodungbong_on_ground (Rodungbong rodungbong ){
 
 int main(void)
 {
-    // Initialization
+    float deltaTime = 0.1f ; // Thời gian trôi qua giữa các khung hình, chương trình đáng ra phải dùng 0.01 nhưng nếu vậy thì nó sẽ mất quá nhiều thời gian để bắt đầu rơi :D
+    float gravity = 9.81f; // gia tốc
     InitWindow( window_width, window_height, "Catching Ball");
-
-    SetTargetFPS( 100 ); // Set the target frames per second
+    SetTargetFPS( 100 ); 
     
     Image rodungbongImage = LoadImage("img/rodungbong.png");
     Texture2D rodungbong_texture = LoadTextureFromImage(rodungbongImage);
 
     Image heartImage = LoadImage("img/heart.png");
     Texture2D heart_texture = LoadTextureFromImage(heartImage);
+    
+    Image iconImage = LoadImage("img/icon.png");
+    Texture2D icon_texture = LoadTextureFromImage(iconImage);
 
+    
     
     Rodungbong rodungbong ={ 
         .x = window_width/2,
@@ -72,39 +79,40 @@ int main(void)
         .velocity = 7
     };
     Heart heart [HEART_COUNT];
-    srand(time(NULL));
+    int attempt = 0;
     for (int i = 0; i < HEART_COUNT; i++) {
-    heart[i].x = 20 + rand() % (window_width - 40); // Random x position only once
-    heart[i].y = 30; // Start from the top
-    heart[i].velocity = 3 + rand() % 3; // Random falling speed
+    heart[i].y = -30; // khởi tạo cho nó trên cùng, không hiện ra 
+    heart[i].velocity = 3.0; // tốc độ rơi
+    heart[i].width = heart_texture.width;
+    heart[i].height = heart_texture.height;
 }
     Ball balls[BALL_COUNT];
     int score = 0;
     srand(time(NULL));
     for (int i = 0; i < BALL_COUNT; i++) {
         balls[i].x = 25 + rand() % (window_width - 50); // Giới hạn để không bị ra ngoài màn hình
-        balls[i].y = 30; // Bắt đầu từ trên cùng
-        balls[i].speed = sqrt(2*9.8*abs(balls[i].y))/5; // Tốc độ ngẫu nhiên
-        balls[i].size = 30.0; // Đặt kích thước
+        balls[i].y = 30; 
+        balls[i].speed = gravity * deltaTime; // Tốc độ rơi tự do
+        balls[i].size = 15.0; // bán kính
     }
-    // Main game loop
+    // GAME BẮT ĐẦU
     while (!WindowShouldClose())
     {
-    // Start drawing
+        SetWindowIcon(iconImage ); 
     BeginDrawing();
     DrawTexture(rodungbong_texture, rodungbong.x, rodungbong.y, WHITE);
-    ClearBackground(WHITE);
-    // Cập nhật vị trí của bóng người chơi
+    
+    // Cập nhật vị trí của rổ đựng bóng
     rodungbong.y += rodungbong.velocity;
     rodungbong.velocity += 1;
 
-    // Kiểm tra bóng người chơi có chạm đất không
+    // Kiểm tra rổ đựng bóng có ở vị trí
     if(rodungbong_on_ground( rodungbong )){
         rodungbong.velocity = 0;
         rodungbong.y = window_height - rodungbong.height*2;
     }
 
-    // Điều khiển rổ bóng người chơi
+    // Điều khiển rổ đựng bóng người chơi
     if(IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)){
         rodungbong.x -= 15;
         if(rodungbong.x <= 0){
@@ -120,47 +128,64 @@ int main(void)
 
     // Cập nhật các quả bóng rơi
     for (int i = 0; i < BALL_COUNT; i++) {
-            balls[i].y += balls[i].speed;
+            balls[i].speed += gravity * deltaTime; // Cập nhật tốc độ theo thời gian
+            balls[i].y += balls[i].speed * deltaTime / 2; // hàm g.t^2
 
             // Nếu bóng chạm đáy, kiểm tra va chạm với bóng người chơi
             if (balls[i].y >= window_height) {
                 // Reset quả bóng để bắt đầu lại từ trên
-                balls[i].x = 25 + rand() % (window_width - 50);
                 balls[i].y = 30; // Bắt đầu lại từ trên
-                balls[i].speed = sqrt(2*9.8*abs(balls[i].y))/5; // Tốc độ ngẫu nhiên
+                balls[i].speed = gravity * deltaTime; // Tốc độ vật lú
             }
 
             // Kiểm tra va chạm với bóng người chơi
             if (balls[i].x + balls[i].size > rodungbong.x  &&
-                balls[i].x < rodungbong.x + rodungbong.width &&
+                balls[i].x - balls[i].size < rodungbong.x + rodungbong.width && 
                 balls[i].y + balls[i].size > rodungbong.y  &&
                 balls[i].y < rodungbong.y + rodungbong.height) {
                 score++;
                 // Reset quả bóng sau khi va chạm
                 balls[i].x = 25 + rand() % (window_width - 50);
                 balls[i].y = 30; // Bắt đầu lại từ trên
-                balls[i].speed = sqrt(2*9.8*abs(balls[i].y))/5; // Tốc độ ngẫu nhiên
+                balls[i].speed = gravity * deltaTime; 
             }
         }
-        for (int i = 0; i < HEART_COUNT; i++) {
-    // Move the heart downward by updating its y position
-    heart[i].y += heart[i].velocity; 
-
-    // Reset the heart if it goes beyond the screen (falls to the bottom)
-    if (heart[i].y >= window_height) {
-        heart[i].x = 20 + rand() % (window_width - 40); // Set a new random x position
-        heart[i].y = 30; // Reset y to start from the top again
-        heart[i].velocity = 5; // Randomize the falling speed again
-    }
-    DrawTexture(heart_texture, heart[i].x, heart[i].y, WHITE);}
+        if(score >= 10 && score % 10 == 0 ){
+            for (int i = 0; i < HEART_COUNT; i++) { // tạo trái tim
+            heart[i].x = 888 ; // Random x position
+            heart[i].y = 30; // Start from the top
+            heart[i].velocity = 3.0; // Falling speed
+        }
+        }
         
-    display(balls, score, heart, heart_texture); // Vẽ tất cả các bóng
+        for (int i = 0; i < HEART_COUNT; i++) {
+        if (heart[i].y > 0) { // nếu có trái tim thì sẽ cho vào hàng chờ ,rơi xuống
+            heart[i].y += heart[i].velocity;
+            
+            // kiểm tra va chạm
+            if (heart[i].x + heart[i].width > rodungbong.x &&
+                heart[i].x - heart[i].width < rodungbong.x + rodungbong.width && 
+                heart[i].y + heart[i].height > rodungbong.y &&
+                heart[i].y < rodungbong.y + rodungbong.height) {
+                attempt++; // tăng mạng
+                heart[i].y = -30; // reset vị trí
+            }
+            if (heart[i].y >= window_height) {
+                heart[i].y = -30; // reset vị trí trái tim
+            }
+            DrawTexture(heart_texture, heart[i].x, heart[i].y, WHITE); // vẽ tim
+        }
+        }
+    if(attempt == 10){ // tắt chương trình khi số lượng máu bằng 10
+        return 0;
+    }
+    ClearBackground(WHITE);
+    display(balls, score, attempt, heart, heart_texture); // Vẽ bóng và tim
     EndDrawing();
-}
-
-
-    // Close window and OpenGL context
+    }
+    
+    //chương trình auto nhận Esc là exit
     CloseWindow(); // Close window and exit the program
-
+    
     return 0;
 }
