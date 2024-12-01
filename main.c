@@ -19,11 +19,9 @@
 #define HEART_COUNT 1
 #define SPIKE_COUNT 4
 
-#define MAX_BALL_COUNT 15    // Giới hạn số lượng bóng tối đa
-#define BALL_INCREMENT_TIME 15000 // Thời gian tăng bóng (ms)
-#define MAX_SPIKE_COUNT 10   // Giới hạn số lượng spike tối đa
-#define SPIKE_INCREMENT_TIME 30000 // Thời gian tăng spike (ms)
-//chưa làm tăng số spike và ball theo thời gian
+#define MAX_BALL_COUNT 10    // Giới hạn số lượng bóng tối đa
+#define MAX_SPIKE_COUNT 8   // Giới hạn số lượng spike tối đa
+//chưa làm tăng số spike theo thời gian
 typedef enum GameState { MENU = 0, INSTRUCTION, GAME , GAME2 , ENDGAME} GameState;
 
 int ballCount = BALL_COUNT;
@@ -148,17 +146,18 @@ void UpdatespikeWithTimers(Spike spikes[], int spikeCount, int spikeTimers[], in
 
 int main(void)
 {  
-
+    
     char *filename = "highscore.txt";
     float do_kho_game;
     // Giá trị ban đầu của thanh bar
     float value = 1.0f; 
-    // Giá trị tối thiểu và tối đa của thanh bar
+    // Giá trị tối thiểu và tối đa của thanh bar để chỉnh độ khó
     float minValue = 0.6f;
     float maxValue = 2.0f;
     // Số lượng nấc trên thanh bar
     int numSteps = 10;
-
+    int deltaTime1 = 0; // bóng
+    int deltaTime2 = 0; // spike
     int attempt = 3;
     float deltaTime = 0.05f ; // Thời gian trôi qua giữa các khung hình, chương trình đáng ra phải dùng 0.01 nhưng nếu vậy thì nó sẽ mất quá nhiều thời gian để bắt đầu rơi :D
     float gravity = 9.81f; // gia tốc
@@ -206,9 +205,9 @@ int main(void)
     heart[i].width = heart_texture.width;
     heart[i].height = heart_texture.height;
 }
-    Spike spike [SPIKE_COUNT];
+    Spike spike [MAX_SPIKE_COUNT];
     srand(time(NULL));
-    for (int i = 0; i < SPIKE_COUNT; i++) {
+    for (int i = 0; i < MAX_SPIKE_COUNT; i++) {
     spike[i].x = 30 + rand() % (window_width - 60);
     spike[i].y = -300 - rand() % (80);; // khởi tạo cho nó trên cùng, không hiện ra 
     spike[i].velocity = gravity * deltaTime * do_kho_game; // tốc độ rơi
@@ -216,21 +215,21 @@ int main(void)
     spike[i].height = spike_texture.height;
     spike[i].size = sqrt(pow(spike[i].width,2) + pow(spike[i].height,2));
 }
-    Ball balls[BALL_COUNT];
+    Ball balls[MAX_BALL_COUNT];
     int score = 0;
     srand(time(NULL));
-    for (int i = 0; i < BALL_COUNT; i++) {
+    for (int i = 0; i < MAX_BALL_COUNT; i++) {
         balls[i].x = 25 + rand() % (window_width - 50); // Giới hạn để không bị ra ngoài màn hình
         balls[i].y = -200 - rand() % (80); 
         balls[i].speed = gravity * deltaTime * do_kho_game; // Tốc độ rơi tự do
         balls[i].size = 20.0; // bán kính
     }
 
-    int ballTimers[BALL_COUNT]; // Mảng lưu thời gian rơi của từng quả bóng
-    int spikeTimers[SPIKE_COUNT];
+    int ballTimers[ballCount]; // Mảng lưu thời gian rơi của từng quả bóng
+    int spikeTimers[spikeCount];
     int currentTime = 0; // Biến đếm thời gian
-    InitializeBallTimers(ballTimers, BALL_COUNT, 2000); // Khởi tạo thời gian rơi ngẫu nhiên, maxDelay = 2000ms
-    InitializeBallTimers(spikeTimers, SPIKE_COUNT, 2000); // Khởi tạo thời gian rơi ngẫu nhiên, maxDelay = 2000ms
+    InitializeBallTimers(ballTimers, ballCount, 2000); // Khởi tạo thời gian rơi ngẫu nhiên, maxDelay = 2000ms
+    InitializeBallTimers(spikeTimers, spikeCount, 2000); // Khởi tạo thời gian rơi ngẫu nhiên, maxDelay = 2000ms
     
 
     int highScore = 0; 
@@ -241,8 +240,7 @@ int main(void)
     }
     // GAME BẮT ĐẦU
     while (!WindowShouldClose())
-    {
-        
+    {   
         switch (gameState)
         {
             case MENU:
@@ -269,6 +267,7 @@ int main(void)
                 {
                     gameState = MENU;
                 }
+                
             } break;
 
             case ENDGAME:
@@ -323,6 +322,7 @@ int main(void)
         const char *tutorial3Text = "Lose heart if a you hit the spikes!";
         const char *tutorial4Text = "Aim for the highest score!";
         const char *tutorial5Text = "GOOD LUCK :D";
+        const char *tutorial6Text = "Press P to Play";
         const char *dokhoText = " Difficulty :";
         // Cỡ chữ
         int title1FontSize = 120;
@@ -335,6 +335,7 @@ int main(void)
         int tutorial3Width = MeasureText(tutorial3Text, info1FontSize);
         int tutorial4Width = MeasureText(tutorial4Text, info1FontSize);
         int tutorial5Width = MeasureText(tutorial5Text, info1FontSize);
+        int tutorial6Width = MeasureText(tutorial6Text, info1FontSize);
         int dokhoWidth = MeasureText(dokhoText, info1FontSize);
 
         // Căn chỉnh văn bản vào giữa theo trục x
@@ -344,6 +345,7 @@ int main(void)
         int tutorial3X = 50;
         int tutorial4X = 50;
         int tutorial5X = 50;
+        int tutorial6X = 900;
         int dokhoX = 60;
 
         // Căn chỉnh vị trí y cách đều
@@ -352,7 +354,8 @@ int main(void)
         int tutorial2Y = tutorial1Y + 100;
         int tutorial3Y = tutorial2Y + 100;   
         int tutorial4Y = tutorial3Y + 100; 
-        int tutorial5Y = tutorial4Y + 100;        
+        int tutorial5Y = tutorial4Y + 100;  
+        int tutorial6Y = tutorial5Y + 50;       
         int dokhoY = tutorial1Y + 600; 
         DrawText(title1Text, title1X, title1Y, title1FontSize, LIGHTBLUE);
         DrawText(tutorial1Text, tutorial1X, tutorial1Y, info1FontSize, LIMEGREEN);
@@ -360,6 +363,7 @@ int main(void)
         DrawText(tutorial3Text, tutorial3X, tutorial3Y, info1FontSize, LIMEGREEN);
         DrawText(tutorial4Text, tutorial4X, tutorial4Y, info1FontSize, LIGHTBLUE);
         DrawText(tutorial5Text, tutorial5X, tutorial5Y, 100, PINKMOLLY);
+        DrawText(tutorial6Text, tutorial6X, tutorial6Y, 40, PINKMOLLY);
         DrawText(dokhoText, dokhoX, dokhoY, 60, GOLD);
         GuiSliderBar((Rectangle){ 580, 800, 400, 50 }, 
                          NULL, NULL, 
@@ -371,26 +375,45 @@ int main(void)
     }
 
     else if (gameState == GAME){
+        
             DrawTexture(rodungbong_texture, rodungbong.x, rodungbong.y, WHITE);
             currentTime += GetFrameTime() * 1000; // Cập nhật thời gian hiện tại
-            UpdateBallsWithTimers(balls, BALL_COUNT, ballTimers, currentTime, deltaTime, gravity,do_kho_game);
-            UpdatespikeWithTimers(spike, SPIKE_COUNT, spikeTimers, currentTime, deltaTime, gravity, do_kho_game);
-            ballTimer += GetFrameTime() * 1000.0f; // Cập nhật thời gian bóng
-            spikeTimer += GetFrameTime() * 1000.0f; // Cập nhật thời gian gai
-
-            if (ballTimer >= BALL_INCREMENT_TIME && ballCount < MAX_BALL_COUNT)
-            {
+            UpdateBallsWithTimers(balls, ballCount, ballTimers, currentTime, deltaTime, gravity,do_kho_game);
+            UpdatespikeWithTimers(spike, spikeCount, spikeTimers, currentTime, deltaTime, gravity, do_kho_game);
+            deltaTime1 += deltaTime *2 *100;
+            deltaTime2 += deltaTime *2 *100;
+        // Kiểm tra nếu đã qua 25 giây
+        if (deltaTime1 >= 15000) { // 25 giây 
+            if (ballCount < MAX_BALL_COUNT) {
                 ballCount++;
-                ballTimer = 0.0f;
+                printf("Tăng số lượng bóng: ballCount = %d\n", ballCount);
             }
+            deltaTime1 = 0; // Reset bộ đếm thời gian
+        }
+        if (deltaTime2 >= 20000) { // 25 giây 
+           if (spikeCount < MAX_SPIKE_COUNT) {
+                spike[spikeCount].x = 30 + rand() % (window_width - 60);
+                spike[spikeCount].y = -300 - rand() % 80;
 
-            if (spikeTimer >= SPIKE_INCREMENT_TIME && spikeCount < MAX_SPIKE_COUNT)
-            {
-                spikeCount++;
-                spikeTimer = 0.0f;
+                // Kiểm tra khoảng cách với các trái tim
+                bool isOverlapping = false;
+                for (int j = 0; j < HEART_COUNT; j++) {
+                    if (abs(spike[spikeCount].x - heart[j].x) < spike[spikeCount].width &&
+                        abs(spike[spikeCount].y - heart[j].y) < spike[spikeCount].height) {
+                        isOverlapping = true;
+                        break;
+                    }
+                }
+
+                if (!isOverlapping) {
+                    spikeCount++;
+                    printf("Tăng số lượng spike: spikeCount = %d\n", spikeCount);
+                }
             }
+            deltaTime2 = 0; // Reset bộ đếm thời gian
+        }
             
-    currentTime += GetFrameTime() * 1000; 
+            
             // Cập nhật vị trí của rổ đựng bóng
             rodungbong.y += rodungbong.velocity;
             rodungbong.velocity += 1;
@@ -416,16 +439,16 @@ int main(void)
             }
 
                 // Cập nhật các quả bóng rơi
-                for (int i = 0; i < BALL_COUNT; i++) {
+                for (int i = 0; i < ballCount; i++) {
                 balls[i].speed += gravity * deltaTime * do_kho_game; // Cập nhật tốc độ theo thời gian
                 balls[i].y += balls[i].speed * deltaTime / 2; // Hàm g.t^2 trong vật lý
 
                     // Kiểm tra va chạm giữa các quả bóng
-                    for (int j = 0; j < BALL_COUNT; j++) {
+                    for (int j = 0; j < ballCount; j++) {
                         if (i != j && CheckCircleCollision(balls[i], balls[j])) {
                         // Nếu va chạm, đẩy một trong hai quả bóng lên vị trí mới
                     balls[j].x = 25 + rand() % (window_width - 50);
-                    balls[j].y = -60 - rand() % (80);
+                    balls[j].y = -200 - rand() % (80);
                     balls[j].speed = gravity * deltaTime * do_kho_game;
                     }
                     }
@@ -433,6 +456,7 @@ int main(void)
 
                     // Nếu bóng chạm đáy, kiểm tra va chạm với rổ và reset bóng
                     if (balls[i].y >= window_height) {
+                    balls[i].x = 25 + rand() % (window_width - 50);
                     balls[i].y = -200 - rand() % (80);
                     balls[i].speed = gravity * deltaTime * do_kho_game;
                     }
@@ -449,7 +473,39 @@ int main(void)
                     balls[i].speed = gravity * deltaTime * do_kho_game;
                     }
                     }
+            for (int i = 0; i < spikeCount; i++) {
+            // nếu có sì pai thì sẽ cho vào hàng chờ ,rơi xuống
+                spike[i].velocity += gravity * deltaTime * do_kho_game; // Cập nhật tốc độ theo thời gian
+                spike[i].y += spike[i].velocity * deltaTime / 2;
 
+                    for (int j = 0; j < spikeCount; j++) {
+                        if (i != j && CheckspikeCollision(spike[i], spike[j])) {
+                        // Nếu va chạm, đẩy một trong hai quả bóng lên vị trí mới
+                    spike[j].x = 30 + rand() % (window_width - 60);
+                    spike[j].y = -300 - rand() % (80);
+                    spike[j].velocity = gravity * deltaTime * do_kho_game;
+                    }
+                    }
+                    if (spike[i].y >= window_height) {
+                        spike[i].x = 30 + rand() % (window_width - 60);
+                        spike[i].y = -300 - rand() % (80);; // reset vị trí sì pai
+                        spike[i].velocity = gravity * deltaTime * do_kho_game;
+                    }
+                    // kiểm tra va chạm
+                    if (spike[i].x + spike[i].width > rodungbong.x &&
+                        spike[i].x - spike[i].width < rodungbong.x + rodungbong.width && 
+                        spike[i].y + spike[i].height > rodungbong.y &&
+                        spike[i].y < rodungbong.y + rodungbong.height) {
+                        attempt--; // trừ mạng
+                        spike[i].x = 30 + rand() % (window_width - 60) ; // 
+                        spike[i].y = -300 - rand() % (80); // 
+                        spike[i].velocity = gravity * deltaTime * do_kho_game;
+                        PlaySound(loseheart);
+                    }
+                
+            
+            
+            }
                     if(score >= 10 && score % 10 == 0 ){
                     for (int i = 0; i < HEART_COUNT; i++) { // tạo trái tim
                     heart[i].x = 888 ;
@@ -479,38 +535,7 @@ int main(void)
                 }
                 
             
-                for (int i = 0; i < SPIKE_COUNT; i++) {
-            // nếu có sì pai thì sẽ cho vào hàng chờ ,rơi xuống
-                spike[i].velocity += gravity * deltaTime * do_kho_game; // Cập nhật tốc độ theo thời gian
-                spike[i].y += spike[i].velocity * deltaTime / 2;
-
-                    for (int j = 0; j < SPIKE_COUNT; j++) {
-                        if (i != j && CheckspikeCollision(spike[i], spike[j])) {
-                        // Nếu va chạm, đẩy một trong hai quả bóng lên vị trí mới
-                    spike[j].x = 25 + rand() % (window_width - 50);
-                    spike[j].y = -300 - rand() % (80);
-                    spike[j].velocity = gravity * deltaTime * do_kho_game;
-                    }
-                    }
-                    if (spike[i].y >= window_height) {
-                        spike[i].y = -300 - rand() % (80);; // reset vị trí sì pai
-                        spike[i].velocity = gravity * deltaTime * do_kho_game;
-                    }
-                    // kiểm tra va chạm
-                    if (spike[i].x + spike[i].width > rodungbong.x &&
-                        spike[i].x - spike[i].width < rodungbong.x + rodungbong.width && 
-                        spike[i].y + spike[i].height > rodungbong.y &&
-                        spike[i].y < rodungbong.y + rodungbong.height) {
-                        attempt--; // trừ mạng
-                        spike[i].x = 30 + rand() % (window_width - 60) ; // 
-                        spike[i].y = -300 - rand() % (80); // 
-                        spike[i].velocity = gravity * deltaTime * do_kho_game;
-                        PlaySound(loseheart);
-                    }
                 
-            DrawTexture(spike_texture, spike[i].x, spike[i].y, BLACK); // vẽ tim
-        
-            }
             if( attempt <= 0){ // tắt chương trình khi số lượng máu bằng 10
             gameState = ENDGAME;
             UnloadTexture( heart_texture);
