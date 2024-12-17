@@ -15,7 +15,7 @@
 #define PINKMOLLY CLITERAL(Color){255, 82, 145, 255}
 #define window_width 1600
 #define window_height 900
-#define BALL_COUNT 5
+#define BALL_COUNT 4
 #define HEART_COUNT 1
 #define SPIKE_COUNT 4
 
@@ -99,16 +99,16 @@ void InitializeBallTimers(int ballTimers[], int ballCount, int maxDelay) {
 }
 
 // Cập nhật vị trí bóng dựa trên thời gian rơi
-void UpdateBallsWithTimers(Ball balls[], int ballCount, int ballTimers[], int currentTime, float deltaTime, float gravity, float do_kho_game) {
+void UpdateBallsWithTimers(Ball balls[], int ballCount, int ballTimers[], int currentTime, float deltaTime, float gravity, float do_kho_game, float heso) {
     for (int i = 0; i < ballCount; i++) {
         if (currentTime >= ballTimers[i]) { // Kiểm tra nếu đã đến thời gian rơi
-            balls[i].speed += gravity * deltaTime * do_kho_game;
+            balls[i].speed += gravity * deltaTime * do_kho_game * heso;
             balls[i].y += balls[i].speed * deltaTime / 2;
 
             // Reset bóng nếu chạm đáy
             if (balls[i].y >= window_height) {
                 balls[i].y = -200 - rand() % (80);
-                balls[i].speed = gravity * deltaTime * do_kho_game;
+                balls[i].speed = gravity * deltaTime * do_kho_game * heso;
             }
         }
     }
@@ -127,15 +127,15 @@ void InitializeSpikeTimers(int spikeTimers[], int spikeCount, int maxDelay) {
     }
 }
 
-void UpdatespikeWithTimers(Spike spikes[], int spikeCount, int spikeTimers[], int currentTime, float deltaTime, float gravity,float do_kho_game) {
+void UpdatespikeWithTimers(Spike spikes[], int spikeCount, int spikeTimers[], int currentTime, float deltaTime, float gravity,float do_kho_game, float heso) {
     for (int i = 0; i < spikeCount; i++) {
         if (currentTime >= spikeTimers[i]) { 
-            spikes[i].velocity += gravity * deltaTime * do_kho_game;
+            spikes[i].velocity += gravity * deltaTime * do_kho_game * heso;
             spikes[i].y += spikes[i].velocity * deltaTime / 2;
 
             if (spikes[i].y >= window_height) {
                 spikes[i].y = -90 - rand() % (80); // Reset vị trí spike
-                spikes[i].velocity = gravity * deltaTime * do_kho_game;
+                spikes[i].velocity = gravity * deltaTime * do_kho_game * heso;
             }
         }
     }
@@ -158,16 +158,22 @@ int main(void)
     int numSteps = 10;
     int deltaTime1 = 0; // bóng
     int deltaTime2 = 0; // spike
+    int deltaTime3 = 0; // tăng tốc độ theo thời gian
     int attempt = 3;
     float deltaTime = 0.05f ; // Thời gian trôi qua giữa các khung hình, chương trình đáng ra phải dùng 0.01 nhưng nếu vậy thì nó sẽ mất quá nhiều thời gian để bắt đầu rơi :D
     float gravity = 9.81f; // gia tốc
+    float heso = 1.0f;
     // Trong vòng lặp GAME
     
     InitWindow( window_width, window_height, "Catching Ball : GO");
     GameState gameState = MENU;
+    Font fontTtf = LoadFontEx("rsc/comicshanns2.ttf", 32, 0, 250);
+    SetTextLineSpacing(16);         // Set line spacing for multiline text (when line breaks are included '\n')
+
+    bool useTtf = false;
     SetTargetFPS( 100 ); 
     InitAudioDevice();  // Khởi tạo hệ thống âm thanh
-
+    
     Sound gainheart = LoadSound("music/gain.mp3");
     Sound loseheart = LoadSound("music/hurt.mp3");
 
@@ -210,7 +216,7 @@ int main(void)
     for (int i = 0; i < MAX_SPIKE_COUNT; i++) {
     spike[i].x = 30 + rand() % (window_width - 60);
     spike[i].y = -300 - rand() % (80);; // khởi tạo cho nó trên cùng, không hiện ra 
-    spike[i].velocity = gravity * deltaTime * do_kho_game; // tốc độ rơi
+    spike[i].velocity = gravity * deltaTime * do_kho_game * heso; // tốc độ rơi
     spike[i].width = spike_texture.width;
     spike[i].height = spike_texture.height;
     spike[i].size = sqrt(pow(spike[i].width,2) + pow(spike[i].height,2));
@@ -221,7 +227,7 @@ int main(void)
     for (int i = 0; i < MAX_BALL_COUNT; i++) {
         balls[i].x = 25 + rand() % (window_width - 50); // Giới hạn để không bị ra ngoài màn hình
         balls[i].y = -200 - rand() % (80); 
-        balls[i].speed = gravity * deltaTime * do_kho_game; // Tốc độ rơi tự do
+        balls[i].speed = gravity * deltaTime * do_kho_game * heso; // Tốc độ rơi tự do
         balls[i].size = 20.0; // bán kính
     }
 
@@ -273,7 +279,7 @@ int main(void)
             case ENDGAME:
             {
                 if(IsKeyPressed(KEY_SPACE)){
-                    gameState = GAME;
+                    gameState = INSTRUCTION;
                 }
             } break;
         }
@@ -316,8 +322,9 @@ int main(void)
         DrawText(exitText, exitX, exitY, infoFontSize, RED);
         }
     else if(gameState == INSTRUCTION){
+        score = 0;
         const char *title1Text = "Tutorial";
-        const char *tutorial1Text = "Move the basket left and right using A and D to catch balls.";
+        const char *tutorial1Text = "Move the basket left and right using A D to catch balls.";
         const char *tutorial2Text = "Earn points for every ball caught";
         const char *tutorial3Text = "Lose heart if a you hit the spikes!";
         const char *tutorial4Text = "Aim for the highest score!";
@@ -325,7 +332,7 @@ int main(void)
         const char *tutorial6Text = "Press P to Play";
         const char *dokhoText = " Difficulty :";
         // Cỡ chữ
-        int title1FontSize = 120;
+        int title1FontSize = 100;
         int info1FontSize = 50;
 
         // Tính toán chiều rộng của mỗi chuỗi văn bản
@@ -345,25 +352,25 @@ int main(void)
         int tutorial3X = 50;
         int tutorial4X = 50;
         int tutorial5X = 50;
-        int tutorial6X = 900;
+        int tutorial6X = 50;
         int dokhoX = 60;
 
         // Căn chỉnh vị trí y cách đều
         int title1Y = 100;  
         int tutorial1Y = title1Y + 100; 
-        int tutorial2Y = tutorial1Y + 100;
-        int tutorial3Y = tutorial2Y + 100;   
-        int tutorial4Y = tutorial3Y + 100; 
-        int tutorial5Y = tutorial4Y + 100;  
-        int tutorial6Y = tutorial5Y + 50;       
+        int tutorial2Y = tutorial1Y + 80;
+        int tutorial3Y = tutorial2Y + 80;   
+        int tutorial4Y = tutorial3Y + 80; 
+        int tutorial5Y = tutorial4Y + 80;  
+        int tutorial6Y = tutorial5Y + 100;       
         int dokhoY = tutorial1Y + 600; 
-        DrawText(title1Text, title1X, title1Y, title1FontSize, LIGHTBLUE);
-        DrawText(tutorial1Text, tutorial1X, tutorial1Y, info1FontSize, LIMEGREEN);
-        DrawText(tutorial2Text, tutorial2X, tutorial2Y, info1FontSize, LIMEGREEN);
-        DrawText(tutorial3Text, tutorial3X, tutorial3Y, info1FontSize, LIMEGREEN);
-        DrawText(tutorial4Text, tutorial4X, tutorial4Y, info1FontSize, LIGHTBLUE);
-        DrawText(tutorial5Text, tutorial5X, tutorial5Y, 100, PINKMOLLY);
-        DrawText(tutorial6Text, tutorial6X, tutorial6Y, 40, PINKMOLLY);
+        DrawTextEx(fontTtf,title1Text, (Vector2){title1X, title1Y}, title1FontSize,2, LIGHTBLUE);
+        DrawTextEx(fontTtf,tutorial1Text,(Vector2){ tutorial1X, tutorial1Y}, info1FontSize,2, LIMEGREEN);
+        DrawTextEx(fontTtf,tutorial2Text, (Vector2){tutorial2X, tutorial2Y}, info1FontSize,2, LIMEGREEN);
+        DrawTextEx(fontTtf,tutorial3Text,(Vector2){ tutorial3X, tutorial3Y}, info1FontSize,2, LIMEGREEN);
+        DrawTextEx(fontTtf,tutorial4Text, (Vector2){tutorial4X, tutorial4Y}, info1FontSize,2, LIGHTBLUE);
+        DrawTextEx(fontTtf,tutorial5Text,(Vector2){ tutorial5X, tutorial5Y}, 120,2, PINKMOLLY);
+        DrawTextEx(fontTtf,tutorial6Text,(Vector2){ tutorial6X, tutorial6Y}, 40,2, PINKMOLLY);
         DrawText(dokhoText, dokhoX, dokhoY, 60, GOLD);
         GuiSliderBar((Rectangle){ 580, 800, 400, 50 }, 
                          NULL, NULL, 
@@ -375,22 +382,30 @@ int main(void)
     }
 
     else if (gameState == GAME){
-        
+            
             DrawTexture(rodungbong_texture, rodungbong.x, rodungbong.y, WHITE);
             currentTime += GetFrameTime() * 1000; // Cập nhật thời gian hiện tại
-            UpdateBallsWithTimers(balls, ballCount, ballTimers, currentTime, deltaTime, gravity,do_kho_game);
-            UpdatespikeWithTimers(spike, spikeCount, spikeTimers, currentTime, deltaTime, gravity, do_kho_game);
+            UpdateBallsWithTimers(balls, ballCount, ballTimers, currentTime, deltaTime, gravity,do_kho_game, heso);
+            UpdatespikeWithTimers(spike, spikeCount, spikeTimers, currentTime, deltaTime, gravity, do_kho_game, heso);
             deltaTime1 += deltaTime *2 *100;
             deltaTime2 += deltaTime *2 *100;
+            deltaTime3 += deltaTime *2 *100;
+        if (deltaTime1 >= 20000) { // 20 giây 
+            if (heso < 1.5) {
+                heso += 0.1;
+                printf("Tăng tốc độ bóng: %d\n", heso);
+            }
+            deltaTime1 = 0; // Reset bộ đếm thời gian
+        }
         // Kiểm tra nếu đã qua 25 giây
-        if (deltaTime1 >= 15000) { // 25 giây 
+        if (deltaTime1 >= 35000) { // 35 giây 
             if (ballCount < MAX_BALL_COUNT) {
                 ballCount++;
                 printf("Tăng số lượng bóng: ballCount = %d\n", ballCount);
             }
             deltaTime1 = 0; // Reset bộ đếm thời gian
         }
-        if (deltaTime2 >= 20000) { // 25 giây 
+        if (deltaTime2 >= 25000) { // 25 giây 
            if (spikeCount < MAX_SPIKE_COUNT) {
                 spike[spikeCount].x = 30 + rand() % (window_width - 60);
                 spike[spikeCount].y = -300 - rand() % 80;
@@ -426,13 +441,13 @@ int main(void)
 
             // Điều khiển rổ đựng bóng người chơi
             if(IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)){
-            rodungbong.x -= 15;
+            rodungbong.x -= 20;
             if(rodungbong.x <= 0){
             rodungbong.x = 0;
             }
             }
             if(IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)){
-            rodungbong.x += 15;
+            rodungbong.x += 20;
             if(rodungbong.x >= window_width - rodungbong.width){
             rodungbong.x = window_width - rodungbong.width;
             }
@@ -440,7 +455,7 @@ int main(void)
 
                 // Cập nhật các quả bóng rơi
                 for (int i = 0; i < ballCount; i++) {
-                balls[i].speed += gravity * deltaTime * do_kho_game; // Cập nhật tốc độ theo thời gian
+                balls[i].speed += gravity * deltaTime * do_kho_game * heso; // Cập nhật tốc độ theo thời gian
                 balls[i].y += balls[i].speed * deltaTime / 2; // Hàm g.t^2 trong vật lý
 
                     // Kiểm tra va chạm giữa các quả bóng
@@ -449,7 +464,7 @@ int main(void)
                         // Nếu va chạm, đẩy một trong hai quả bóng lên vị trí mới
                     balls[j].x = 25 + rand() % (window_width - 50);
                     balls[j].y = -200 - rand() % (80);
-                    balls[j].speed = gravity * deltaTime * do_kho_game;
+                    balls[j].speed = gravity * deltaTime * do_kho_game * heso;
                     }
                     }
                     
@@ -458,7 +473,8 @@ int main(void)
                     if (balls[i].y >= window_height) {
                     balls[i].x = 25 + rand() % (window_width - 50);
                     balls[i].y = -200 - rand() % (80);
-                    balls[i].speed = gravity * deltaTime * do_kho_game;
+                    balls[i].speed = gravity * deltaTime * do_kho_game * heso;
+                    
                     }
 
                     // Kiểm tra va chạm với rổ đựng bóng
@@ -470,12 +486,12 @@ int main(void)
                     // Reset quả bóng sau khi va chạm
                     balls[i].x = 25 + rand() % (window_width - 50);
                     balls[i].y = -200 - rand() % (80);
-                    balls[i].speed = gravity * deltaTime * do_kho_game;
+                    balls[i].speed = gravity * deltaTime * do_kho_game * heso;
                     }
                     }
             for (int i = 0; i < spikeCount; i++) {
             // nếu có sì pai thì sẽ cho vào hàng chờ ,rơi xuống
-                spike[i].velocity += gravity * deltaTime * do_kho_game; // Cập nhật tốc độ theo thời gian
+                spike[i].velocity += gravity * deltaTime * do_kho_game * heso; // Cập nhật tốc độ theo thời gian
                 spike[i].y += spike[i].velocity * deltaTime / 2;
 
                     for (int j = 0; j < spikeCount; j++) {
@@ -483,13 +499,13 @@ int main(void)
                         // Nếu va chạm, đẩy một trong hai quả bóng lên vị trí mới
                     spike[j].x = 30 + rand() % (window_width - 60);
                     spike[j].y = -300 - rand() % (80);
-                    spike[j].velocity = gravity * deltaTime * do_kho_game;
+                    spike[j].velocity = gravity * deltaTime * do_kho_game * heso;
                     }
                     }
                     if (spike[i].y >= window_height) {
                         spike[i].x = 30 + rand() % (window_width - 60);
                         spike[i].y = -300 - rand() % (80);; // reset vị trí sì pai
-                        spike[i].velocity = gravity * deltaTime * do_kho_game;
+                        spike[i].velocity = gravity * deltaTime * do_kho_game * heso;
                     }
                     // kiểm tra va chạm
                     if (spike[i].x + spike[i].width > rodungbong.x &&
@@ -499,7 +515,7 @@ int main(void)
                         attempt--; // trừ mạng
                         spike[i].x = 30 + rand() % (window_width - 60) ; // 
                         spike[i].y = -300 - rand() % (80); // 
-                        spike[i].velocity = gravity * deltaTime * do_kho_game;
+                        spike[i].velocity = gravity * deltaTime * do_kho_game * heso;
                         PlaySound(loseheart);
                     }
                 
@@ -536,11 +552,9 @@ int main(void)
                 
             
                 
-            if( attempt <= 0){ // tắt chương trình khi số lượng máu bằng 10
+            if( attempt <= 0 ){ // tắt chương trình khi số lượng máu bằng 10
             gameState = ENDGAME;
-            UnloadTexture( heart_texture);
-            UnloadTexture(spike_texture);
-            UnloadTexture(rodungbong_texture);
+            
             }
             display(balls, score, attempt, heart, heart_texture, spike, spike_texture); // Vẽ bóng và tim và sì pai
         
@@ -560,6 +574,7 @@ int main(void)
             const char *instructionText = "Press ESC to exit";
             char highScoreText[50];
             sprintf(highScoreText, "High Score: %d", highScore);
+            const char *instruction1Text = "Press Space to restart";
     
             int titleFontSize = 120;
             int infoFontSize = 80;
@@ -569,23 +584,29 @@ int main(void)
             int scoreWidth = MeasureText(scoreText, infoFontSize);
             int highScoreWidth = MeasureText(highScoreText, infoFontSize);
             int instructionWidth = MeasureText(instructionText, infoFontSize - 20);
-
+            int instruction1Width = MeasureText(instructionText, infoFontSize - 20);
 
             int endX = (window_width - endWidth) / 2;
             int scoreX = (window_width - scoreWidth) / 2;
-            int highScoreX = (window_width - highScoreWidth) / 2;
+            int highScoreX = (window_width - scoreWidth) / 2;
             int instructionX = (window_width - instructionWidth) / 2;
+            int instruction1X = (window_width - instruction1Width) / 2;
+
 
             int endY = 300;  
             int scoreY = endY + 200;            
             int highScoreY = scoreY + 100; 
             int instructionY = highScoreY + 100; 
+            int instruction1Y = instructionY + 100; 
 
-            DrawText(endText, endX, endY, titleFontSize, RED);
-            DrawText(scoreText, scoreX, scoreY, infoFontSize, MAGENTA);
-            DrawText(highScoreText, highScoreX, highScoreY, infoFontSize, GREEN);
-            DrawText(instructionText, instructionX, instructionY, infoFontSize, LIGHTGRAY);
-         
+            DrawTextEx(fontTtf,endText,(Vector2){ endX, endY}, titleFontSize,2, RED);
+            DrawTextEx(fontTtf,scoreText, (Vector2){scoreX, scoreY}, infoFontSize,2, MAGENTA);
+            DrawTextEx(fontTtf,highScoreText,(Vector2){ highScoreX, highScoreY}, infoFontSize,2, GREEN);
+            DrawTextEx(fontTtf,instructionText,(Vector2){ instructionX, instructionY}, infoFontSize,2, BLUE);
+            DrawTextEx(fontTtf,instruction1Text,(Vector2){ instruction1X, instruction1Y}, infoFontSize,2, BLUE);
+            attempt = 3;
+
+        
         }
 
     
