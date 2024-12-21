@@ -38,7 +38,7 @@
 
 ## Troubleshooting
 - **no image:** Hãy chắc chắn rằng các file png đã ở trong folder img mới mà bạn tạo.
-- **cannot run the file:** hãy đảm bảo rằng các file .json ở trong folder vscode.
+- **cannot run the file:** hãy đảm bảo rằng các file đã ở đúng nơi quy định ở **installation**.
 
 ## Contributing
 Contributions are welcome! Please open an issue or submit a pull request on the [GitHub repository](https://github.com/Q4oM1nh/catching-ball).
