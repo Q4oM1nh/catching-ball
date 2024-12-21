@@ -12,10 +12,10 @@
 ---
 
 # Overview
--là một tựa game nhà làm tương tự với phong cách của các sản phẩm trên nền tảng adobe flash một thời đã quá đỗi quen thuộc với một thế hệ 2k.
--Với lối chơi đơn giản, người chơi chỉ cần điều chỉnh hai nút bấm để có trải nghiệm giải trí nhanh và dễ tiếp cận. 
--Người chơi sẽ điều khiển một chiếc giỏ di chuyển theo chiều ngang để hứng những quả bóng rơi từ trên xuống. Mỗi quả bóng bắt được sẽ cộng điểm cho người chơi. 
-**Tốc độ rơi của bóng sẽ tăng dần theo thời gian, tạo nên thử thách về phản xạ và sự tập trung.**
+- là một tựa game nhà làm tương tự với phong cách của các sản phẩm trên nền tảng adobe flash một thời đã quá đỗi quen thuộc với một thế hệ 2k.
+- Với lối chơi đơn giản, người chơi chỉ cần điều chỉnh hai nút bấm để có trải nghiệm giải trí nhanh và dễ tiếp cận. 
+- Người chơi sẽ điều khiển một chiếc giỏ di chuyển theo chiều ngang để hứng những quả bóng rơi từ trên xuống. Mỗi quả bóng bắt được sẽ cộng điểm cho người chơi. 
+- **Tốc độ rơi của bóng sẽ tăng dần theo thời gian, tạo nên thử thách về phản xạ và sự tập trung.**
 ## Features
 - **Adjust difficulty**: chọn độ khó cho game bằng cách thay đổi tốc độ ban đầu của bóng.
 - **Speed adjust**: bóng tự động tăng tốc độ theo thời gian, và cũng như tốc độ bóng lẫn spike sẽ tăng dần theo độ cao như vật lý ngoài đời thực.
