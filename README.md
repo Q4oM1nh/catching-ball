@@ -1,5 +1,5 @@
 <div align="center">
-   <img src="img/icon.png" alt="Catching Ball" width="200" height="200"> 
+   <img src="icon.png" alt="Catching Ball" width="200" height="200"> 
    <h1>Catching Ball</h1> 
    <p> Tựa game mang phong cách cổ điển tối giản nhưng thú vị .</p> 
    <a href="#features"><strong>Features</strong></a> •
